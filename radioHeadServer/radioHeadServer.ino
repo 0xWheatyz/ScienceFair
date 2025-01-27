@@ -16,10 +16,11 @@ RH_NRF905 nrf905(
   15, // CE
   4, // TXEN
   5 //CSN
-); 
+);
+ 
 void setup() 
 {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) 
     ; // wait for serial port to connect. Needed for Leonardo only
   if (!nrf905.init())
@@ -52,4 +53,3 @@ void loop()
     }
   }
 }
- 
