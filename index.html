@@ -1,0 +1,78 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Science fair</title>
+</head>
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin:20px;
+}
+#chat-box{
+    border: 1px solid #ccc;
+    padding: 10px;
+    height: 300px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+#message-input{
+    width: 80%;
+    padding: 10px;
+    margin-right: 10px;
+}
+#send-btn{
+    padding: 10px;
+}
+</style>
+<body>
+    <h1>Science Fair Peer to Peer Communication</h1>
+    <h2>Chat Interface</h2>
+    <div id="chat-box"></div>
+    <input type="text" id="message-input" placeholder="Type your message">
+    <button id="send-btn">Send</button>
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        async function fetchMessages() {
+            try{
+                const response = await fetch('/receive');
+                const messages = await response.json();
+                chatBox.innerHTML = messages.map(msg => `<div>${msg}</div>`).join('');
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+                console.error('Error fetchin messages:',error);
+            }
+        }
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            try {
+                await fetch('/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message }),
+                });
+                messageInput.value = '';
+                fetchMessages();
+            } catch (error) {
+                console.error('Error sending message:', error)
+            }
+        }
+        sendBtn.addEventListener('click',sendMessage);
+        messageInput.addEventListener('keypress',(e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        setInterval(fetchMessages, 1000);
+
+        fetchMessages();
+    </script>
+</body>
+</html>
