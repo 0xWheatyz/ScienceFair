@@ -5,7 +5,7 @@
 #include <RH_NRF905.h>
 
 // Wi-Fi credentials for the Access Point (AP) network
-const char *ssid = "ESP_MODULE1";      // Wi-Fi network name for ESP32
+const char *ssid = "ESP_MODULE2";      // Wi-Fi network name for ESP32
 const char *password = "123456789"; // Wi-Fi network password for ESP32
 
 // NRF905 setup
