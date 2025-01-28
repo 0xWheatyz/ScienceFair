@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Box</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #chat-box {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+    #message-input {
+      width: 80%;
+      padding: 10px;
+      margin-right: 10px;
+    }
+    #send-btn {
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chat Interface</h1>
+  <div id="chat-box"></div>
+  <input type="text" id="message-input" placeholder="Type your message...">
+  <button id="send-btn">Send</button>
+
+  <script>
+    const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    // Mock messages array to simulate chat history
+    let mockMessages = [
+      "Welcome to the chat!",
+      "This is a simulated message."
+    ];
+
+    // Simulate fetching messages
+    async function fetchMessages() {
+      chatBox.innerHTML = mockMessages.map(msg => `<div>${msg}</div>`).join('');
+      chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+    }
+
+    // Simulate sending a message
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      // Add the new message to the mock messages array
+      mockMessages.push(`You: ${message}`);
+      messageInput.value = ''; // Clear input
+      fetchMessages(); // Refresh messages
+
+      // Simulate bot responses
+      simulateBotResponses(message);
+    }
+
+    // Simulate multiple bot responses
+    function simulateBotResponses(userMessage) {
+      const botResponses = [
+        `Bot: I see you said "${userMessage}". Interesting!`,
+        "Bot: Did you know? Cats sleep 16-18 hours a day.",
+        "Bot: Here's a random tip: Stay hydrated!",
+        "Bot: That's a great message. Keep going!"
+      ];
+
+      botResponses.forEach((response, index) => {
+        setTimeout(() => {
+          mockMessages.push(response);
+          fetchMessages();
+        }, (index + 1) * 2000); // Delay each response by 2 seconds
+      });
+    }
+
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // Initial fetch
+    fetchMessages();
+  </script>
+</body>
+</html>
