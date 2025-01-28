@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Box</title>
+  <title>ESP32 Chat Interface</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -27,7 +27,7 @@
   </style>
 </head>
 <body>
-  <h1>Chat Interface</h1>
+  <h1>ESP32 Chat Interface</h1>
   <div id="chat-box"></div>
   <input type="text" id="message-input" placeholder="Type your message...">
   <button id="send-btn">Send</button>
@@ -36,48 +36,53 @@
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
+    const ESP32_IP = "192.168.4.1"; // Replace with the actual ESP32 IP address
 
-    // Mock messages array to simulate chat history
-    let mockMessages = [
-      "Welcome to the chat!",
-      "This is a simulated message."
-    ];
-
-    // Simulate fetching messages
-    async function fetchMessages() {
-      chatBox.innerHTML = mockMessages.map(msg => `<div>${msg}</div>`).join('');
-      chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+    // Function to add messages to the chat box
+    function addMessageToChatBox(message) {
+      chatBox.innerHTML += `<div>${message}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
     }
 
-    // Simulate sending a message
+    // Function to send a message to the ESP32
     async function sendMessage() {
       const message = messageInput.value.trim();
       if (!message) return;
 
-      // Add the new message to the mock messages array
-      mockMessages.push(`You: ${message}`);
-      messageInput.value = ''; // Clear input
-      fetchMessages(); // Refresh messages
+      // POST message to ESP32
+      try {
+        const response = await fetch(`http://${ESP32_IP}/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `message=${encodeURIComponent(message)}`,
+        });
 
-      // Simulate bot responses
-      simulateBotResponses(message);
+        if (response.ok) {
+          addMessageToChatBox(`You: ${message}`);
+          messageInput.value = ''; // Clear input
+        } else {
+          addMessageToChatBox("Error: Failed to send message");
+        }
+      } catch (error) {
+        addMessageToChatBox("Error: Could not connect to ESP32");
+      }
     }
 
-    // Simulate multiple bot responses
-    function simulateBotResponses(userMessage) {
-      const botResponses = [
-        `Bot: I see you said "${userMessage}". Interesting!`,
-        "Bot: Did you know? Cats sleep 16-18 hours a day.",
-        "Bot: Here's a random tip: Stay hydrated!",
-        "Bot: That's a great message. Keep going!"
-      ];
-
-      botResponses.forEach((response, index) => {
-        setTimeout(() => {
-          mockMessages.push(response);
-          fetchMessages();
-        }, (index + 1) * 2000); // Delay each response by 2 seconds
-      });
+    // Function to fetch the latest messages from the ESP32
+    async function fetchMessages() {
+      try {
+        const response = await fetch(`http://${ESP32_IP}/receive`);
+        if (response.ok) {
+          const receivedMessage = await response.text();
+          if (receivedMessage && receivedMessage !== "No messages received yet.") {
+            addMessageToChatBox(`ESP32: ${receivedMessage}`);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
     }
 
     // Event listeners
@@ -86,8 +91,8 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    // Initial fetch
-    fetchMessages();
+    // Poll for messages every 2 seconds
+    setInterval(fetchMessages, 2000);
   </script>
 </body>
 </html>
