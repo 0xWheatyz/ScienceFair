@@ -14,7 +14,7 @@
 #include <nRF905.h>
 #include <SPI.h>
 
-#define RXADDR 0xE7E7E7E7 // Address of this device
+#define RXADDR 0xA94EC554 // Address of this device
 #define TXADDR 0xE7E7E7E7 // Address of device to send to
 
 #define TIMEOUT 500 // 500ms ping timeout
@@ -23,8 +23,8 @@
 #define PACKET_OK		1
 #define PACKET_INVALID	2
 
-#define LED				A5
-#define PAYLOAD_SIZE	NRF905_MAX_PAYLOAD // 32
+#define LED				2
+#define PAYLOAD_SIZE	16 // 32
 
 nRF905 transceiver = nRF905();
 
@@ -64,18 +64,18 @@ void setup()
 	SPI.begin();
 
 	// All wires, maximum functionality
-	transceiver.begin(
-    SPI,         // SPI bus to use (default VSPI for ESP32)
-    10000000,    // SPI Clock speed (10MHz)
-    15,          // SPI SS (CSN pin on nRF905, D8)
-    14,          // CE (standby, D5)
-    17,          // TRX (TXEN pin on nRF905, D1)
-    NRF905_PIN_UNUSED, // PWR (power down, always powered, optional)
-    NRF905_PIN_UNUSED, // CD (collision avoidance, optional)
-    16,          // DR (Data Ready pin, D3, updated to GPIO16)
-    4,           // AM (Address Match pin, D2)
-    nRF905_int_dr, // Interrupt function for DR
-    nRF905_int_am  // Interrupt function for AM
+transceiver.begin(
+		SPI, // SPI bus to use (SPI, SPI1, SPI2 etc)
+		10000000, // SPI Clock speed (10MHz)
+		5, // SPI SS
+		15, // CE (standby)
+		4, // TRX (RX/TX mode)
+		2, // PWR (power down)
+		17, // CD (collision avoid)
+		22, // DR (data ready)
+		16, // AM (address match)
+		nRF905_int_dr, // Interrupt function for DR
+		nRF905_int_am // Interrupt function for AM
 	);
 
 /*
@@ -126,6 +126,8 @@ void setup()
 
 	// Set address of this device
 	transceiver.setListenAddress(RXADDR);
+  transceiver.setBand(NRF905_BAND_433);
+  transceiver.setChannel(0);
 
 	Serial.println(F("Client started"));
 }
@@ -173,7 +175,7 @@ void loop()
 	while(1)
 	{
 		// Uncomment this line if the library is running in polling mode
-//		transceiver.poll();
+		//transceiver.poll();
 
 		success = packetStatus;
 		if(success != PACKET_NONE)
@@ -187,7 +189,7 @@ void loop()
 		Serial.println(F("Ping timed out"));
 		timeouts++;
 	}
-	else if(success == PACKET_INVALID)
+	else if(success != PACKET_OK)
 	{
 		Serial.println(F("Invalid packet!"));
 		invalids++;
@@ -215,6 +217,7 @@ void loop()
 			{
 				badData++;
 				Serial.println(F("Bad data!"));
+        Serial.println(F(replyBuffer[i]));
 				break;
 			}
 		}

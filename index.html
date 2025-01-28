@@ -3,31 +3,57 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Science fair</title>
+    <title>Science Fair</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #chat-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 15px;
+            display: inline-block;
+            word-wrap: break-word;
+        }
+
+        .sent {
+            background-color: #0084ff;
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .received {
+            background-color: #f1f0f0;
+            color: #000;
+            align-self: flex-start;
+        }
+
+        #message-input {
+            width: 80%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+
+        #send-btn {
+            padding: 10px;
+        }
+    </style>
 </head>
-<style>
-body{
-    font-family: Arial, sans-serif;
-    margin:20px;
-}
-#chat-box{
-    border: 1px solid #ccc;
-    padding: 10px;
-    height: 300px;
-    overflow-y: auto;
-    margin-bottom: 10px;
-}
-#message-input{
-    width: 80%;
-    padding: 10px;
-    margin-right: 10px;
-}
-#send-btn{
-    padding: 10px;
-}
-</style>
 <body>
-    <h1>Science Fair Peer to Peer Communication</h1>
+    <h1>Science Fair Peer-to-Peer Communication</h1>
     <h2>Chat Interface</h2>
     <div id="chat-box"></div>
     <input type="text" id="message-input" placeholder="Type your message">
@@ -36,17 +62,26 @@ body{
         const chatBox = document.getElementById('chat-box');
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
+        let lastMessages = [];
 
         async function fetchMessages() {
-            try{
+            try {
                 const response = await fetch('/receive');
                 const messages = await response.json();
-                chatBox.innerHTML = messages.map(msg => `<div>${msg}</div>`).join('');
-                chatBox.scrollTop = chatBox.scrollHeight;
+
+                // Only update the chat box if new messages are received
+                if (JSON.stringify(messages) !== JSON.stringify(lastMessages)) {
+                    lastMessages = messages;
+                    chatBox.innerHTML = messages.map(msg =>
+                        `<div class="message ${msg.sent ? 'sent' : 'received'}">${msg.text}</div>`
+                    ).join('');
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
             } catch (error) {
-                console.error('Error fetchin messages:',error);
+                console.error('Error fetching messages:', error);
             }
         }
+
         async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message) return;
@@ -57,16 +92,17 @@ body{
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message }),
+                    body: JSON.stringify({ text: message, sent: true }),
                 });
                 messageInput.value = '';
                 fetchMessages();
             } catch (error) {
-                console.error('Error sending message:', error)
+                console.error('Error sending message:', error);
             }
         }
-        sendBtn.addEventListener('click',sendMessage);
-        messageInput.addEventListener('keypress',(e) => {
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
 
@@ -76,3 +112,4 @@ body{
     </script>
 </body>
 </html>
+
