@@ -4,7 +4,7 @@
 #include <SPIFFS.h>
 
 // Wi-Fi credentials for the Access Point (AP) network
-const char *ssid = "ESP_MODULE1";      // Wi-Fi network name for ESP32
+const char *ssid = "ESP_MODULE2";      // Wi-Fi network name for ESP32
 const char *password = "123456789"; // Wi-Fi network password for ESP32
 
 // NRF905 setup
@@ -131,6 +131,7 @@ const char* content = R"rawliteral(
 </body>
 </html>
 )rawliteral";
+
 void setup() {
     Serial.begin(115200);
     if (!SPIFFS.begin(true)) {
@@ -167,7 +168,7 @@ void setup() {
 
     server.on("/receive", HTTP_GET, []() {
         String jsonResponse = "{\"message\": \"" + lastReceivedMessage + "\"}";
-        String lastReceivedMessage = "";
+        lastReceivedMessage = ""; // Clear the last received message after sending it
         server.send(200, "application/json", jsonResponse);
     });
 
