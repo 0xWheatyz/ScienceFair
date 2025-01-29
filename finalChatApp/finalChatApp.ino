@@ -23,52 +23,107 @@ const char* content = R"rawliteral(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Message Sender</title>
+    <title>ESP32 Chat Interface</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        input[type="text"] { width: 300px; }
-        button { margin-top: 10px; }
-        #receivedMessage { margin-top: 20px; font-weight: bold; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        #chat-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        #message-input {
+            width: 80%;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #send-btn {
+            padding: 10px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #send-btn:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
-    <h1>ESP32 Message Sender</h1>
-    <input type="text" id="messageInput" placeholder="Enter your message here">
-    <button onclick="sendMessage()">Send Message</button>
-    <h2>Last Received Message:</h2>
-    <p id="receivedMessage"></p>
+    <h1>ESP32 Chat Interface</h1>
+    <div id="chat-box"></div>
+    <input type="text" id="message-input" placeholder="Type your message...">
+    <button id="send-btn">Send</button>
 
     <script>
-        function sendMessage() {
-            const message = document.getElementById('messageInput').value;
-            fetch('/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'message=' + encodeURIComponent(message) // Correctly format the body
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const ESP32_IP = "192.168.4.1"; // Replace with the actual ESP32 IP address
+
+        // Function to add messages to the chat box
+        function addMessageToChatBox(message) {
+            chatBox.innerHTML += `<div>${message}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
+        }
+
+        // Function to send a message to the ESP32
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // POST message to ESP32
+            try {
+                const response = await fetch('/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'message=' + encodeURIComponent(message) // Correctly format the body
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addMessageToChatBox(`You: ${data.message}`);
+                    messageInput.value = ''; // Clear input
+                } else {
+                    addMessageToChatBox("Error: Failed to send message");
                 }
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('receivedMessage').innerText = data.message;
-            })
-            .catch(error => console.error('Error:', error));
+            } catch (error) {
+                addMessageToChatBox("Error: Could not connect to ESP32");
+            }
         }
 
         // Function to fetch the last received message
-        function fetchLastMessage() {
-            fetch('/receive')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('receivedMessage').innerText = data.message;
-                })
-                .catch(error => console.error('Error:', error));
+        async function fetchLastMessage() {
+            try {
+                const response = await fetch('/receive');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.message && data.message !== "No messages received yet.") {
+                        addMessageToChatBox(`ESP32: ${data.message}`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+            }
         }
+
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
 
         // Automatically fetch the last message every 5 seconds
         setInterval(fetchLastMessage, 5000);
@@ -76,7 +131,6 @@ const char* content = R"rawliteral(
 </body>
 </html>
 )rawliteral";
-
 void setup() {
     Serial.begin(115200);
     if (!SPIFFS.begin(true)) {
