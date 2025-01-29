@@ -4,7 +4,7 @@
 #include <SPIFFS.h>
 
 // Wi-Fi credentials for the Access Point (AP) network
-const char *ssid = "ESP_MODULE2";      // Wi-Fi network name for ESP32
+const char *ssid = "ESP_MODULE1";      // Wi-Fi network name for ESP32
 const char *password = "123456789"; // Wi-Fi network password for ESP32
 
 // NRF905 setup
@@ -132,6 +132,19 @@ const char* content = R"rawliteral(
 </html>
 )rawliteral";
 
+// Function to escape special characters in JSON
+String escapeJson(const String& str) {
+    String escaped = str;
+    escaped.replace("\"", "\\\"");
+    escaped.replace("\\", "\\\\");
+    escaped.replace("\b", "\\b");
+    escaped.replace("\f", "\\f");
+    escaped.replace("\n", "\\n");
+    escaped.replace("\r", "\\r");
+    escaped.replace("\t", "\\t");
+    return escaped;
+}
+
 void setup() {
     Serial.begin(115200);
     if (!SPIFFS.begin(true)) {
@@ -160,15 +173,21 @@ void setup() {
             nrf905.send(data, message.length());
             nrf905.waitPacketSent();
             Serial.println("Sent via NRF905: " + message);
-            server.send(200, "application/json", "{\"message\":\"" + message + "\"}");
+            server.send(200, "application/json", "{\"message\":\"" + escapeJson(message) + "\"}");
         } else {
             server.send(400, "application/json", "{\"message\":\"Message parameter is missing\"}");
         }
     });
 
     server.on("/receive", HTTP_GET, []() {
-        String jsonResponse = "{\"message\": \"" + lastReceivedMessage + "\"}";
-        lastReceivedMessage = ""; // Clear the last received message after sending it
+        // Debugging: Print the last received message before sending
+        Serial.println("Last received message before sending: " + lastReceivedMessage);
+        
+        // Escape the message to ensure valid JSON
+        String jsonResponse = "{\"message\": \"" + escapeJson(lastReceivedMessage) + "\"}";
+        
+        // Clear the last received message after sending it
+        lastReceivedMessage = "";
         server.send(200, "application/json", jsonResponse);
     });
 
@@ -182,14 +201,16 @@ void setup() {
 void loop() {
     server.handleClient();
 
-    // Check for incoming messages via NRF905
-    uint8_t buf[RH_NRF905_MAX_MESSAGE_LEN];
+    uint8_t buf[RH_NRF905_MAX_MESSAGE_LEN] = {0}; // Ensure buffer is cleared
     uint8_t len = sizeof(buf);
+
     if (nrf905.waitAvailableTimeout(500)) {
         if (nrf905.recv(buf, &len)) {
+            buf[len] = '\0'; // Ensure null termination
             String receivedMessage = String((char *)buf);
+            receivedMessage.trim(); // Remove extra whitespace
             Serial.println("Received via NRF905: " + receivedMessage);
-            lastReceivedMessage = receivedMessage; // Store the last received message
+            lastReceivedMessage = receivedMessage;
         }
     }
 }
