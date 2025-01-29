@@ -113,6 +113,7 @@ void setup() {
 
     server.on("/receive", HTTP_GET, []() {
         String jsonResponse = "{\"message\": \"" + lastReceivedMessage + "\"}";
+        String lastReceivedMessage = "";
         server.send(200, "application/json", jsonResponse);
     });
 
