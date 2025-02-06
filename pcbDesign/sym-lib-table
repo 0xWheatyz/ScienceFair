@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "NRF905")(type "KiCad")(uri "${KIPRJMOD}/importedObjects/NRF905.kicad_sym")(options "")(descr ""))
+  (lib (name "2025-02-02_16-07-39")(type "KiCad")(uri "${KIPRJMOD}/importedObjects/2025-02-02_16-07-39.kicad_sym")(options "")(descr ""))
+)
